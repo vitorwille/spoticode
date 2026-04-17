@@ -172,7 +172,7 @@ export class SpoticodeProvider implements vscode.WebviewViewProvider {
                     type: 'update',
                     title: 'Sem música tocando',
                     artist: 'Spoticode',
-                    image: '../resources/spoticode-album-art.png',
+                    image: 'https://i.imgur.com/weLYqlw.png',
                     isPlaying: false
                 });
             }
