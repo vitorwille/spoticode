@@ -57,7 +57,7 @@ export class FullscreenView {
                         headers: { 'Authorization': 'Bearer ' + this.token },
                         body: JSON.stringify(data)
                     });
-                    vscode.window.showInformationMessage('Spoticode: Reproduzindo...');
+                    console.log('Spoticode: Reproduzindo...');
                 } catch (e: any) {
                     console.error('Play error', e);
                     vscode.window.showErrorMessage('Spoticode: Erro ao reproduzir. Verifique se o Spotify está aberto.');
@@ -68,7 +68,7 @@ export class FullscreenView {
                         method: 'POST',
                         headers: { 'Authorization': 'Bearer ' + this.token }
                     });
-                    vscode.window.showInformationMessage('Spoticode: Adicionado à fila!');
+                    console.log('Spoticode: Adicionado à fila!');
                 } catch (e: any) {
                     console.error('Queue error', e.response?.data || e);
                     vscode.window.showErrorMessage('Spoticode: Erro ao adicionar à fila.');
@@ -106,8 +106,9 @@ export class FullscreenView {
                         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                         margin: 0;
                         padding: 32px;
+                        transition: padding 0.3s ease;
                     }
-                    h1 { font-size: 32px; font-weight: 800; margin: 0; }
+                    h1 { font-size: 32px; font-weight: 800; margin: 0; transition: font-size 0.3s; }
                     .header-user {
                         display: flex;
                         align-items: center;
@@ -132,14 +133,25 @@ export class FullscreenView {
                         object-fit: cover;
                         box-shadow: 0 4px 12px rgba(0,0,0,0.5);
                     }
-                    .tabs { display: flex; gap: 16px; margin-bottom: 32px; }
+                    .tabs { 
+                        display: flex; 
+                        gap: 12px; 
+                        margin-bottom: 32px; 
+                        overflow-x: auto;
+                        padding-bottom: 8px;
+                        scrollbar-width: none; /* Firefox */
+                    }
+                    .tabs::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
                     .tab {
                         background: none; border: none; color: #b3b3b3; font-size: 14px; 
                         font-weight: 700; cursor: pointer; padding: 8px 16px; border-radius: 20px;
                         transition: all 0.2s;
+                        white-space: nowrap;
+                        flex-shrink: 0;
                     }
                     .tab.active { background: #333; color: #fff; }
-                    .tab:hover:not(.active) { color: #fff; }
+                    .tab:hover:not(.active) { color: #fff; background: rgba(255,255,255,0.1); }
                     
                     .search-container {
                         margin-bottom: 32px;
@@ -156,11 +168,12 @@ export class FullscreenView {
                         color: #fff;
                         font-size: 14px;
                         outline: none;
-                        transition: background-color 0.2s;
+                        transition: background-color 0.2s, box-shadow 0.2s;
+                        box-sizing: border-box;
                     }
                     .search-input:focus {
                         background: #2a2a2a;
-                        box-shadow: 0 0 0 2px #fff;
+                        box-shadow: 0 0 0 2px #1ed760;
                     }
                     .search-icon {
                         position: absolute;
@@ -173,18 +186,23 @@ export class FullscreenView {
                     
                     .grid {
                         display: grid;
-                        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-                        gap: 24px;
+                        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                        gap: 16px;
                     }
                     .card {
                         background: #181818;
                         padding: 16px;
                         border-radius: 8px;
-                        transition: background-color 0.3s ease;
+                        transition: background-color 0.3s ease, transform 0.2s ease;
                         cursor: pointer;
                         position: relative;
+                        display: flex;
+                        flex-direction: column;
                     }
-                    .card:hover { background: #282828; }
+                    .card:hover { 
+                        background: #282828; 
+                        transform: translateY(-4px);
+                    }
                     .card img {
                         width: 100%;
                         aspect-ratio: 1;
@@ -195,14 +213,14 @@ export class FullscreenView {
                     }
                     .card-title {
                         font-weight: 700;
-                        font-size: 16px;
+                        font-size: 15px;
                         margin-bottom: 4px;
                         white-space: nowrap;
                         overflow: hidden;
                         text-overflow: ellipsis;
                     }
                     .card-subtitle {
-                        font-size: 14px;
+                        font-size: 13px;
                         color: #b3b3b3;
                         display: -webkit-box;
                         -webkit-line-clamp: 2;
@@ -212,13 +230,13 @@ export class FullscreenView {
                     .btn-play {
                         position: absolute;
                         bottom: 80px;
-                        right: 24px;
+                        right: 20px;
                         background: #1ed760;
                         color: #000;
                         border: none;
                         border-radius: 50%;
-                        width: 48px;
-                        height: 48px;
+                        width: 44px;
+                        height: 44px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
@@ -233,19 +251,19 @@ export class FullscreenView {
                         transform: translateY(0);
                     }
                     .btn-play:hover {
-                        transform: scale(1.05) !important;
+                        transform: scale(1.1) !important;
                         background: #1fdf64;
                     }
                     .btn-add-queue {
                         position: absolute;
                         bottom: 80px;
-                        left: 24px;
+                        left: 20px;
                         background: #333;
                         color: #fff;
                         border: none;
                         border-radius: 50%;
-                        width: 48px;
-                        height: 48px;
+                        width: 44px;
+                        height: 44px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
@@ -260,7 +278,7 @@ export class FullscreenView {
                         transform: translateY(0);
                     }
                     .btn-add-queue:hover {
-                        transform: scale(1.05) !important;
+                        transform: scale(1.1) !important;
                         background: #444;
                     }
                     .queue-title {
@@ -319,13 +337,40 @@ export class FullscreenView {
                         position: fixed;
                         top: 32px;
                         right: 32px;
-                        width: 80px;
-                        height: 80px;
+                        width: 64px;
+                        height: 64px;
                         object-fit: contain;
                         opacity: 0.9;
                         pointer-events: none;
-                        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
                         z-index: 100;
+                        transition: all 0.3s;
+                    }
+                    
+                    /* Responsive */
+                    @media (max-width: 768px) {
+                        body { padding: 24px; }
+                        h1 { font-size: 28px; }
+                        .logo-top-right { width: 48px; height: 48px; top: 24px; right: 24px; opacity: 0.5; }
+                        .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+                    }
+                    
+                    @media (max-width: 480px) {
+                        body { padding: 16px; }
+                        h1 { font-size: 20px; }
+                        .header-user { gap: 12px; }
+                        .header-user img { width: 44px; height: 44px; }
+                        .logo-top-right { display: none; }
+                        .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+                        .card { padding: 8px; }
+                        .card img { margin-bottom: 8px; }
+                        .card-title { font-size: 13px; }
+                        .card-subtitle { font-size: 11px; }
+                        .btn-play, .btn-add-queue { width: 36px; height: 36px; bottom: 60px; }
+                        .btn-play { right: 12px; }
+                        .btn-add-queue { left: 12px; }
+                        .search-container { max-width: none; }
+                        .tabs { margin-bottom: 20px; gap: 4px; }
+                        .tab { padding: 6px 12px; font-size: 13px; }
                     }
                 </style>
             </head>

@@ -2,7 +2,7 @@
   "name": "spoticode",
   "displayName": "Spoticode - Spotify Miniplayer no VS Code",
   "description": "Controle o Spotify diretamente no VS Code. Selecione músicas, playlists, pause e muito mais sem fechar o VSCode.",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "publisher": "vitorwille",
   "engines": {
     "vscode": "^1.80.0"
