@@ -2,7 +2,7 @@
   "name": "spoticode",
   "displayName": "Spoticode - Spotify Miniplayer no VS Code",
   "description": "Controle o Spotify diretamente no VS Code. Selecione músicas, playlists, pause e muito mais sem fechar o VSCode.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "publisher": "vitorwille",
   "engines": {
     "vscode": "^1.80.0"
@@ -34,6 +34,10 @@
     "url": "https://github.com/vitorwille/spoticode/issues"
   },
   "homepage": "https://github.com/vitorwille/spoticode#readme",
+  "activationEvents": [
+    "onView:spoticode.miniplayer",
+    "onCommand:spoticode.login"
+  ],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -89,17 +93,5 @@
     "@types/vscode": "^1.80.0",
     "esbuild": "^0.20.2",
     "typescript": "^5.4.5"
-  },
-  "badges": [
-    {
-      "url": "https://vsmarketplacebadges.dev/version-short/vitorwille.spoticode.svg",
-      "href": "https://marketplace.visualstudio.com/items?itemName=vitorwille.spoticode",
-      "description": "Marketplace Version"
-    },
-    {
-      "url": "https://img.shields.io/visual-studio-marketplace/i/vitorwille.spoticode?color=1DB954",
-      "href": "https://marketplace.visualstudio.com/items?itemName=vitorwille.spoticode",
-      "description": "Installs"
-    }
-  ]
+  }
 }

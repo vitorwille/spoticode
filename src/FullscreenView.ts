@@ -5,7 +5,7 @@ export class FullscreenView {
     private panel?: vscode.WebviewPanel;
     private static activeViews: Set<FullscreenView> = new Set();
 
-    constructor(private token: string, private extensionUri: vscode.Uri) {
+    constructor(private token: string, private extensionUri: vscode.Uri, private version: string) {
         FullscreenView.activeViews.add(this);
     }
 
@@ -22,7 +22,7 @@ export class FullscreenView {
 
         this.panel = vscode.window.createWebviewPanel(
             'spoticodeFullscreen',
-            'Spoticode - Músicas',
+            'Spoticode - Menu Principal',
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
@@ -47,7 +47,7 @@ export class FullscreenView {
                         if (message.offset) {
                             data.offset = { uri: message.offset };
                         }
-                    } else if (message.uri && message.uri.includes('playlist')) {
+                    } else if (message.uri && (message.uri.includes('playlist') || message.uri.includes('album') || message.uri.includes('artist') || message.uri.includes('show'))) {
                         data.context_uri = message.uri;
                     } else if (message.uri) {
                         data.uris = [message.uri];
@@ -57,7 +57,6 @@ export class FullscreenView {
                         headers: { 'Authorization': 'Bearer ' + this.token },
                         body: JSON.stringify(data)
                     });
-                    console.log('Spoticode: Reproduzindo...');
                 } catch (e: any) {
                     console.error('Play error', e);
                     vscode.window.showErrorMessage('Spoticode: Erro ao reproduzir. Verifique se o Spotify está aberto.');
@@ -68,7 +67,7 @@ export class FullscreenView {
                         method: 'POST',
                         headers: { 'Authorization': 'Bearer ' + this.token }
                     });
-                    console.log('Spoticode: Adicionado à fila!');
+                    vscode.window.showInformationMessage('Spoticode: Adicionado à fila!');
                 } catch (e: any) {
                     console.error('Queue error', e.response?.data || e);
                     vscode.window.showErrorMessage('Spoticode: Erro ao adicionar à fila.');
@@ -106,9 +105,8 @@ export class FullscreenView {
                         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                         margin: 0;
                         padding: 32px;
-                        transition: padding 0.3s ease;
                     }
-                    h1 { font-size: 32px; font-weight: 800; margin: 0; transition: font-size 0.3s; }
+                    h1 { font-size: 32px; font-weight: 800; margin: 0; }
                     .header-user {
                         display: flex;
                         align-items: center;
@@ -133,33 +131,22 @@ export class FullscreenView {
                         object-fit: cover;
                         box-shadow: 0 4px 12px rgba(0,0,0,0.5);
                     }
-                    .tabs { 
-                        display: flex; 
-                        gap: 12px; 
-                        margin-bottom: 32px; 
-                        overflow-x: auto;
-                        padding-bottom: 8px;
-                        scrollbar-width: none; /* Firefox */
-                    }
-                    .tabs::-webkit-scrollbar { display: none; } /* Chrome/Safari */
-
+                    .tabs { display: flex; gap: 16px; margin-bottom: 15px; }
                     .tab {
                         background: none; border: none; color: #b3b3b3; font-size: 14px; 
                         font-weight: 700; cursor: pointer; padding: 8px 16px; border-radius: 20px;
                         transition: all 0.2s;
-                        white-space: nowrap;
-                        flex-shrink: 0;
                     }
                     .tab.active { background: #333; color: #fff; }
-                    .tab:hover:not(.active) { color: #fff; background: rgba(255,255,255,0.1); }
+                    .tab:hover:not(.active) { color: #fff; }
                     
                     .search-container {
-                        margin-bottom: 32px;
                         position: relative;
                         width: 100%;
                         max-width: 400px;
                     }
                     .search-input {
+                        box-sizing: border-box;
                         width: 100%;
                         background: #242424;
                         border: none;
@@ -168,12 +155,51 @@ export class FullscreenView {
                         color: #fff;
                         font-size: 14px;
                         outline: none;
-                        transition: background-color 0.2s, box-shadow 0.2s;
-                        box-sizing: border-box;
+                        transition: background-color 0.2s;
                     }
                     .search-input:focus {
                         background: #2a2a2a;
-                        box-shadow: 0 0 0 2px #1ed760;
+                        box-shadow: 0 0 0 2px #fff;
+                    }
+                    .search-section {
+                        display: flex;
+                        align-items: center;
+                        gap: 16px;
+                        margin-bottom: 32px;
+                    }
+                    .search-label {
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: #fff;
+                        white-space: nowrap;
+                    }
+                    .search-pills {
+                        display: flex;
+                        gap: 8px;
+                    }
+                    .search-pill {
+                        background: none;
+                        border: none;
+                        color: #b3b3b3;
+                        font-size: 14px;
+                        font-weight: 700;
+                        cursor: pointer;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        transition: all 0.2s;
+                        white-space: nowrap;
+                    }
+                    .search-pill.active {
+                        background: #333;
+                        color: #fff;
+                    }
+                    .search-pill:hover:not(.active) {
+                        color: #fff;
+                    }
+                    .search-container {
+                        position: relative;
+                        width: 100%;
+                        max-width: 400px;
                     }
                     .search-icon {
                         position: absolute;
@@ -186,23 +212,18 @@ export class FullscreenView {
                     
                     .grid {
                         display: grid;
-                        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-                        gap: 16px;
+                        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                        gap: 24px;
                     }
                     .card {
                         background: #181818;
                         padding: 16px;
                         border-radius: 8px;
-                        transition: background-color 0.3s ease, transform 0.2s ease;
+                        transition: background-color 0.3s ease;
                         cursor: pointer;
                         position: relative;
-                        display: flex;
-                        flex-direction: column;
                     }
-                    .card:hover { 
-                        background: #282828; 
-                        transform: translateY(-4px);
-                    }
+                    .card:hover { background: #282828; }
                     .card img {
                         width: 100%;
                         aspect-ratio: 1;
@@ -213,14 +234,14 @@ export class FullscreenView {
                     }
                     .card-title {
                         font-weight: 700;
-                        font-size: 15px;
+                        font-size: 16px;
                         margin-bottom: 4px;
                         white-space: nowrap;
                         overflow: hidden;
                         text-overflow: ellipsis;
                     }
                     .card-subtitle {
-                        font-size: 13px;
+                        font-size: 14px;
                         color: #b3b3b3;
                         display: -webkit-box;
                         -webkit-line-clamp: 2;
@@ -230,13 +251,13 @@ export class FullscreenView {
                     .btn-play {
                         position: absolute;
                         bottom: 80px;
-                        right: 20px;
+                        right: 24px;
                         background: #1ed760;
                         color: #000;
                         border: none;
                         border-radius: 50%;
-                        width: 44px;
-                        height: 44px;
+                        width: 48px;
+                        height: 48px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
@@ -251,19 +272,19 @@ export class FullscreenView {
                         transform: translateY(0);
                     }
                     .btn-play:hover {
-                        transform: scale(1.1) !important;
+                        transform: scale(1.05) !important;
                         background: #1fdf64;
                     }
                     .btn-add-queue {
                         position: absolute;
                         bottom: 80px;
-                        left: 20px;
+                        left: 24px;
                         background: #333;
                         color: #fff;
                         border: none;
                         border-radius: 50%;
-                        width: 44px;
-                        height: 44px;
+                        width: 48px;
+                        height: 48px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
@@ -278,7 +299,7 @@ export class FullscreenView {
                         transform: translateY(0);
                     }
                     .btn-add-queue:hover {
-                        transform: scale(1.1) !important;
+                        transform: scale(1.05) !important;
                         background: #444;
                     }
                     .queue-title {
@@ -337,40 +358,13 @@ export class FullscreenView {
                         position: fixed;
                         top: 32px;
                         right: 32px;
-                        width: 64px;
-                        height: 64px;
+                        width: 80px;
+                        height: 80px;
                         object-fit: contain;
                         opacity: 0.9;
                         pointer-events: none;
+                        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
                         z-index: 100;
-                        transition: all 0.3s;
-                    }
-                    
-                    /* Responsive */
-                    @media (max-width: 768px) {
-                        body { padding: 24px; }
-                        h1 { font-size: 28px; }
-                        .logo-top-right { width: 48px; height: 48px; top: 24px; right: 24px; opacity: 0.5; }
-                        .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-                    }
-                    
-                    @media (max-width: 480px) {
-                        body { padding: 16px; }
-                        h1 { font-size: 20px; }
-                        .header-user { gap: 12px; }
-                        .header-user img { width: 44px; height: 44px; }
-                        .logo-top-right { display: none; }
-                        .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
-                        .card { padding: 8px; }
-                        .card img { margin-bottom: 8px; }
-                        .card-title { font-size: 13px; }
-                        .card-subtitle { font-size: 11px; }
-                        .btn-play, .btn-add-queue { width: 36px; height: 36px; bottom: 60px; }
-                        .btn-play { right: 12px; }
-                        .btn-add-queue { left: 12px; }
-                        .search-container { max-width: none; }
-                        .tabs { margin-bottom: 20px; gap: 4px; }
-                        .tab { padding: 6px 12px; font-size: 13px; }
                     }
                 </style>
             </head>
@@ -379,13 +373,23 @@ export class FullscreenView {
                 <div class="header-user">
                     <img id="userImg" src="${logoUri}" alt="User Avatar" />
                     <div class="user-info">
-                        <h1>Spoticode - Músicas</h1>
-                        <p id="userName">Logado como: [...]</p>
+                        <h1>Spoticode <small style="font-size: 12px; font-weight: 400; color: #b3b3b3; vertical-align: middle;">v${this.version}</small></h1>
+                        <span id="userName">[ ... ]</span>
                     </div>
                 </div>
-                <div class="search-container">
-                    <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.046l4.274 4.22a.75.75 0 1 0 1.06-1.06l-4.244-4.19c1.472-1.624 2.364-3.771 2.364-6.14 0-5.14-4.226-9.282-9.407-9.282zm0 1.5c4.329 0 7.907 3.493 7.907 7.78s-3.578 7.78-7.907 7.78-7.907-3.493-7.907-7.78 3.578-7.78 7.907-7.78z"/></svg>
-                    <input type="text" id="searchInput" class="search-input" placeholder="O que você quer ouvir?">
+                <div class="search-section" style="margin-bottom: 50px;">
+                    <span class="search-label">Buscar:</span>
+                    <div class="search-container">
+                        <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.046l4.274 4.22a.75.75 0 1 0 1.06-1.06l-4.244-4.19c1.472-1.624 2.364-3.771 2.364-6.14 0-5.14-4.226-9.282-9.407-9.282zm0 1.5c4.329 0 7.907 3.493 7.907 7.78s-3.578 7.78-7.907 7.78-7.907-3.493-7.907-7.78 3.578-7.78 7.907-7.78z"/></svg>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Digite e selecione a categoria desejada ao lado.">
+                    </div>
+                    <div class="search-pills">
+                        <button class="search-pill active" data-search-type="track">Músicas</button>
+                        <button class="search-pill" data-search-type="playlist">Playlists</button>
+                        <button class="search-pill" data-search-type="album">Álbuns</button>
+                        <button class="search-pill" data-search-type="artist">Artistas</button>
+                        <button class="search-pill" data-search-type="show">Podcasts</button>
+                    </div>
                 </div>
                 <div class="tabs">
                     <button class="tab" data-type="search" id="tabSearch" style="display:none;">Busca</button>
@@ -396,7 +400,7 @@ export class FullscreenView {
                     <button class="tab" data-type="queue">Fila</button>
                 </div>
                 
-                <div id="playAllContainer" style="display: none; margin-bottom: 24px;">
+                <div id="playAllContainer" style="display: none; margin-bottom: 15px;">
                     <button id="btnPlayAllLiked" style="background:#1ed760; color:#000; border:none; padding:12px 32px; border-radius:30px; font-weight:700; font-size:16px; cursor:pointer; display:flex; align-items:center; gap:8px;">
                         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7.05 3.606l13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z"/></svg>
                         Reproduzir
@@ -421,12 +425,14 @@ export class FullscreenView {
                     const tabs = document.querySelectorAll('.tab');
                     const searchInput = document.getElementById('searchInput');
                     const tabSearch = document.getElementById('tabSearch');
+                    const searchPills = document.querySelectorAll('.search-pill');
                     const loadMoreContainer = document.getElementById('loadMoreContainer');
                     const btnLoadMore = document.getElementById('btnLoadMore');
                     
                     let currentOffset = 0;
                     let currentLoadedType = '';
                     let currentSearchQuery = '';
+                    let selectedSearchType = 'track';
 
                     let searchTimeout;
                     searchInput.addEventListener('input', (e) => {
@@ -444,6 +450,19 @@ export class FullscreenView {
                         searchTimeout = setTimeout(() => {
                             loadContent('search', q);
                         }, 500);
+                    });
+
+                    searchPills.forEach(pill => {
+                        pill.addEventListener('click', () => {
+                            searchPills.forEach(p => p.classList.remove('active'));
+                            pill.classList.add('active');
+                            selectedSearchType = pill.dataset.searchType;
+                            
+                            const q = searchInput.value.trim();
+                            if (q.length > 0) {
+                                loadContent('search', q);
+                            }
+                        });
                     });
                     
                     const iconPlay = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7.05 3.606l13.49 7.788a.7.7 0 0 1 0 1.212L7.05 20.394A.7.7 0 0 1 6 19.788V4.212a.7.7 0 0 1 1.05-.606z"/></svg>';
@@ -490,14 +509,14 @@ export class FullscreenView {
 
                         loadMoreContainer.style.display = items.length === 50 ? 'flex' : 'none';
 
-                        const html = items.map(item => {
-                            let imgUrl = '${logoUri}';
-                            if (type === 'playlists' && item.images && item.images.length > 0) imgUrl = item.images[0].url;
-                            if (type !== 'playlists' && item.album && item.album.images && item.album.images.length > 0) imgUrl = item.album.images[0].url;
+                        const html = items.filter(Boolean).map(item => {
+                            const imgUrl = item.images?.[0]?.url || item.album?.images?.[0]?.url || '${logoUri}';
+                            const title = item.name || 'Desconhecido';
                             
-                            const title = item.name;
                             let subtitle = '';
-                            if (type === 'playlists') subtitle = 'De ' + (item.owner?.display_name || 'Spotify');
+                            if (item.type === 'playlist') subtitle = 'De ' + (item.owner?.display_name || 'Spotify');
+                            else if (item.type === 'artist') subtitle = 'Artista';
+                            else if (item.type === 'show') subtitle = item.publisher || 'Podcast';
                             else subtitle = (item.artists || []).map(a => a.name).join(', ');
 
                             const isTrack = type === 'tracks' || type === 'queue';
@@ -540,8 +559,18 @@ export class FullscreenView {
                             const offsetParamQuery = '?offset=' + currentOffset;
 
                             if (type === 'search') {
-                                const data = await fetchSpotify('/search?q=' + encodeURIComponent(query) + '&type=track&limit=' + limit + offsetParam);
-                                renderItems(data.tracks.items, 'tracks', isAppend);
+                                const data = await fetchSpotify('/search?q=' + encodeURIComponent(query) + '&type=' + selectedSearchType + '&limit=' + limit + offsetParam);
+                                if (selectedSearchType === 'track') {
+                                    renderItems(data.tracks.items, 'tracks', isAppend);
+                                } else if (selectedSearchType === 'playlist') {
+                                    renderItems(data.playlists.items, 'playlists', isAppend);
+                                } else if (selectedSearchType === 'album') {
+                                    renderItems(data.albums.items, 'albums', isAppend);
+                                } else if (selectedSearchType === 'artist') {
+                                    renderItems(data.artists.items, 'artists', isAppend);
+                                } else if (selectedSearchType === 'show') {
+                                    renderItems(data.shows.items, 'shows', isAppend);
+                                }
                             } else if (type === 'playlists') {
                                 const data = await fetchSpotify('/me/playlists?limit=' + limit + (currentOffset > 0 ? offsetParam : ''));
                                 renderItems(data.items, 'playlists', isAppend);
@@ -621,13 +650,14 @@ export class FullscreenView {
                      };
 
                      function renderSingleItem(item, type) {
-                        let imgUrl = '${logoUri}';
-                        if (type === 'playlists' && item.images && item.images.length > 0) imgUrl = item.images[0].url;
-                        if (type !== 'playlists' && item.album && item.album.images && item.album.images.length > 0) imgUrl = item.album.images[0].url;
+                        if (!item) return '';
+                        const imgUrl = item.images?.[0]?.url || item.album?.images?.[0]?.url || '${logoUri}';
+                        const title = item.name || 'Desconhecido';
                         
-                        const title = item.name;
                         let subtitle = '';
-                        if (type === 'playlists') subtitle = 'De ' + (item.owner?.display_name || 'Spotify');
+                        if (item.type === 'playlist') subtitle = 'De ' + (item.owner?.display_name || 'Spotify');
+                        else if (item.type === 'artist') subtitle = 'Artista';
+                        else if (item.type === 'show') subtitle = item.publisher || 'Podcast';
                         else subtitle = (item.artists || []).map(a => a.name).join(', ');
 
                         const isTrack = type === 'tracks' || type === 'queue';
@@ -649,7 +679,7 @@ export class FullscreenView {
                             const data = await fetchSpotify('/me');
                             if (data.images && data.images.length > 0) {
                                 document.getElementById('userImg').src = data.images[0].url;
-                                document.getElementById('userName').innerText = 'Logado como: ' + data.display_name;
+                                document.getElementById('userName').innerText = 'Bem-vindo(a), ' + data.display_name + '.';
                             }
                         } catch(e) { }
                     }

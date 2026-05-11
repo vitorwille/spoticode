@@ -141,7 +141,7 @@ export class SpotifyAuth {
 
                     this.provider.setToken(token);
                     vscode.window.showInformationMessage("Spoticode autorizado com sucesso!");
-                    res.send('<h1>Autorizado! Pode fechar esta aba.</h1>');
+                    res.send('<h1>Spoticode autorizado - você pode fechar esta aba.</h1>');
 
                     if (this.server) {
                         this.server.close();
@@ -151,7 +151,7 @@ export class SpotifyAuth {
                     res.status(400).send('<h1>Erro no token. Verifique o Client ID.</h1>');
                 }
             } catch (error: any) {
-                res.status(500).send('<h1>Erro interno na troca de tokens.</h1>');
+                res.status(500).send('<h1>Erro interno na comunicação com o Spotify. Tente novamente.</h1>');
             }
         });
 

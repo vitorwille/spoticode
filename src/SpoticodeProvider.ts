@@ -8,7 +8,7 @@ export class SpoticodeProvider implements vscode.WebviewViewProvider {
     private auth?: SpotifyAuth;
     private repeatState: string = 'off';
 
-    constructor(private readonly _extensionUri: vscode.Uri) { }
+    constructor(private readonly _extensionUri: vscode.Uri, private readonly _version: string) { }
 
     public setAuth(auth: SpotifyAuth) {
         this.auth = auth;
@@ -111,7 +111,7 @@ export class SpoticodeProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'fullscreen':
                     if (this.token) {
-                        new FullscreenView(this.token!, this._extensionUri).show();
+                        new FullscreenView(this.token!, this._extensionUri, this._version).show();
                     }
                     break;
             }

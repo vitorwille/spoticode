@@ -57,6 +57,25 @@ Para usar a extensão, você precisa criar uma Application no Spotify Developer 
 <img alt="Spoticode - Miniplayer" src="https://i.imgur.com/8l0FQaI.png" style="display: block; margin: auto auto 15px auto">
 <img alt="Spoticode - Tela Fullscreen" src="https://i.imgur.com/I91FgtZ.png" style="display: block; margin: 15px 15px auto auto; width: 100%;">
 
+## 🏗️ Desenvolvimento e Colaboração
+
+Esta extensão foi desenvolvida como projeto pessoal. Novas features e colaboradores sempre serão muito bem-vindos.
+
+Comandos úteis para o desenvolvimento:
+
+| Comando | Descrição |
+| --- | --- |
+| `npm install` | Instala as dependências |
+| `npx vsce package` | Compila e empacota a extensão em `.vsix` |
+
+Para contribuir com o projeto, você deve:
+
+1. Fazer um fork do repositório.
+2. Criar uma branch própria (ex.: `git checkout -b feature/NovaFeature`).
+3. Commitar as mudanças (ex.: `git commit -m 'add: feature xyz...'`).
+4. Fazer push para a branch (ex.: `git push origin feature/NovaFeature`).
+5. Abrir um PR.
+
 ## ❓ FAQ
 
 ### Dei play na música pelo app do Spotify e o Spoticode não atualizou o miniplayer. Por quê?
