@@ -433,6 +433,7 @@ export class FullscreenView {
                     let currentLoadedType = '';
                     let currentSearchQuery = '';
                     let selectedSearchType = 'track';
+                    let userCountry = 'BR';
 
                     let searchTimeout;
                     searchInput.addEventListener('input', (e) => {
@@ -510,20 +511,26 @@ export class FullscreenView {
                         loadMoreContainer.style.display = items.length === 50 ? 'flex' : 'none';
 
                         const html = items.filter(Boolean).map(item => {
-                            const imgUrl = item.images?.[0]?.url || item.album?.images?.[0]?.url || '${logoUri}';
+                            const imgUrl = item.images?.[0]?.url || item.album?.images?.[0]?.url || item.show?.images?.[0]?.url || '${logoUri}';
                             const title = item.name || 'Desconhecido';
                             
                             let subtitle = '';
                             if (item.type === 'playlist') subtitle = 'De ' + (item.owner?.display_name || 'Spotify');
                             else if (item.type === 'artist') subtitle = 'Artista';
                             else if (item.type === 'show') subtitle = item.publisher || 'Podcast';
+                            else if (item.type === 'episode') subtitle = (item.show?.name || 'Podcast') + (item.show?.publisher ? ' - ' + item.show.publisher : '');
                             else subtitle = (item.artists || []).map(a => a.name).join(', ');
 
                             const isTrack = type === 'tracks' || type === 'queue';
-                            const btnQueue = isTrack ? \`<button class="btn-add-queue" onclick="event.stopPropagation(); addToQueue('\${item.uri}')">\${iconAddQueue}</button>\` : '';
+                            const btnQueue = isTrack ? \`<button class="btn-add-queue" title="Adicionar à fila" onclick="event.stopPropagation(); addToQueue('\${item.uri}')">\${iconAddQueue}</button>\` : '';
+                            let action = \`play('\${item.uri}')\`;
+                            if (item.type === 'show') action = \`viewShow('\${item.id}')\`;
+                            else if (item.type === 'artist') action = \`viewArtist('\${item.id}')\`;
+                            else if (item.type === 'playlist') action = \`viewPlaylist('\${item.id}')\`;
+                            else if (item.type === 'album') action = \`viewAlbum('\${item.id}')\`;
 
                             return \`
-                                <div class="card" onclick="play('\${item.uri}')">
+                                <div class="card" onclick="\${action}">
                                     <img src="\${imgUrl}" alt="Cover"/>
                                     <div class="card-title">\${title}</div>
                                     <div class="card-subtitle">\${subtitle}</div>
@@ -602,6 +609,27 @@ export class FullscreenView {
                                 } else {
                                     renderItems(items, 'queue', isAppend);
                                 }
+                            } else if (type === 'episodes') {
+                                const data = await fetchSpotify('/shows/' + query + '/episodes?limit=' + limit + (currentOffset > 0 ? offsetParam : ''));
+                                renderItems(data.items, 'episodes', isAppend);
+                            } else if (type === 'artist_top') {
+                                const data = await fetchSpotify('/artists/' + query + '/top-tracks?market=' + userCountry);
+                                renderItems(data.tracks, 'tracks', isAppend);
+                            } else if (type === 'playlist_tracks') {
+                                const data = await fetchSpotify('/playlists/' + query + '/tracks?limit=' + limit + (currentOffset > 0 ? offsetParam : ''));
+                                const items = data.items.map(i => i.track);
+                                renderItems(items, 'tracks', isAppend);
+                            } else if (type === 'album_tracks') {
+                                if (currentOffset === 0) {
+                                    const data = await fetchSpotify('/albums/' + query);
+                                    window.currentAlbumImages = data.images;
+                                    const items = data.tracks.items.map(i => ({ ...i, album: { images: data.images } }));
+                                    renderItems(items, 'tracks', isAppend);
+                                } else {
+                                    const data = await fetchSpotify('/albums/' + query + '/tracks?limit=' + limit + offsetParam);
+                                    const items = data.items.map(i => ({ ...i, album: { images: window.currentAlbumImages } }));
+                                    renderItems(items, 'tracks', isAppend);
+                                }
                             }
                         } catch (e) {
                             console.error(e);
@@ -649,22 +677,33 @@ export class FullscreenView {
                         vscode.postMessage({ type: 'addToQueue', uri });
                      };
 
+                     window.viewShow = function(id) { loadContent('episodes', id); };
+                     window.viewArtist = function(id) { loadContent('artist_top', id); };
+                     window.viewPlaylist = function(id) { loadContent('playlist_tracks', id); };
+                     window.viewAlbum = function(id) { loadContent('album_tracks', id); };
+
                      function renderSingleItem(item, type) {
                         if (!item) return '';
-                        const imgUrl = item.images?.[0]?.url || item.album?.images?.[0]?.url || '${logoUri}';
+                        const imgUrl = item.images?.[0]?.url || item.album?.images?.[0]?.url || item.show?.images?.[0]?.url || '${logoUri}';
                         const title = item.name || 'Desconhecido';
                         
                         let subtitle = '';
                         if (item.type === 'playlist') subtitle = 'De ' + (item.owner?.display_name || 'Spotify');
                         else if (item.type === 'artist') subtitle = 'Artista';
                         else if (item.type === 'show') subtitle = item.publisher || 'Podcast';
+                        else if (item.type === 'episode') subtitle = (item.show?.name || 'Podcast') + (item.show?.publisher ? ' - ' + item.show.publisher : '');
                         else subtitle = (item.artists || []).map(a => a.name).join(', ');
 
                         const isTrack = type === 'tracks' || type === 'queue';
                         const btnQueue = isTrack ? \`<button class="btn-add-queue" onclick="event.stopPropagation(); addToQueue('\${item.uri}')">\${iconAddQueue}</button>\` : '';
+                        let action = \`play('\${item.uri}')\`;
+                        if (item.type === 'show') action = \`viewShow('\${item.id}')\`;
+                        else if (item.type === 'artist') action = \`viewArtist('\${item.id}')\`;
+                        else if (item.type === 'playlist') action = \`viewPlaylist('\${item.id}')\`;
+                        else if (item.type === 'album') action = \`viewAlbum('\${item.id}')\`;
 
                         return \`
-                            <div class="card" onclick="play('\${item.uri}')">
+                            <div class="card" onclick="\${action}">
                                 <img src="\${imgUrl}" alt="Cover"/>
                                 <div class="card-title">\${title}</div>
                                 <div class="card-subtitle">\${subtitle}</div>
@@ -677,6 +716,9 @@ export class FullscreenView {
                     async function loadProfile() {
                         try {
                             const data = await fetchSpotify('/me');
+                            if (data.country) {
+                                userCountry = data.country;
+                            }
                             if (data.images && data.images.length > 0) {
                                 document.getElementById('userImg').src = data.images[0].url;
                                 document.getElementById('userName').innerText = 'Bem-vindo(a), ' + data.display_name + '.';

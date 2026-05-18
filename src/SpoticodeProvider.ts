@@ -51,8 +51,8 @@ export class SpoticodeProvider implements vscode.WebviewViewProvider {
             switch (data.type) {
                 case 'playpause':
                     try {
-                        const res = await this.spotifyFetch('https://api.spotify.com/v1/me/player');
-                        if (!res) return;
+                        const res = await this.spotifyFetch('https://api.spotify.com/v1/me/player?additional_types=episode');
+                        if (!res || res.status === 204) return;
                         const state: any = await res.json();
 
                         if (state && state.is_playing == true) {
@@ -118,7 +118,7 @@ export class SpoticodeProvider implements vscode.WebviewViewProvider {
         });
 
         this.updateWebview();
-        setInterval(() => this.updateWebview(), 7000);
+        setInterval(() => this.updateWebview(), 3500);
     }
 
     private async spotifyFetch(url: string, options: any = {}): Promise<any> {
@@ -151,15 +151,35 @@ export class SpoticodeProvider implements vscode.WebviewViewProvider {
         if (!this._view || !this.token) return;
 
         try {
-            const res = await this.spotifyFetch('https://api.spotify.com/v1/me/player');
-            if (!res) return;
+            const res = await this.spotifyFetch('https://api.spotify.com/v1/me/player?additional_types=episode');
+            if (!res || res.status === 204) {
+                this._view.webview.postMessage({
+                    type: 'update',
+                    title: 'Sem música tocando',
+                    artist: 'Spoticode',
+                    image: 'https://i.imgur.com/aA1MjNw.png',
+                    isPlaying: false,
+                    repeatState: 'off'
+                });
+                FullscreenView.refreshAll();
+                return;
+            }
             const data: any = await res.json();
 
             if (data && data.item) {
                 const track = data.item;
                 const title = track.name;
-                const artist = track.artists.map((a: any) => a.name).join(', ');
-                const image = track.album.images[0]?.url || '';
+
+                let artist = '';
+                let image = '';
+                if (track.type === 'episode') {
+                    artist = track.show ? track.show.name : 'Podcast';
+                    image = (track.images && track.images[0]?.url) || (track.show && track.show.images && track.show.images[0]?.url) || '';
+                } else {
+                    artist = track.artists ? track.artists.map((a: any) => a.name).join(', ') : '';
+                    image = track.album?.images[0]?.url || '';
+                }
+
                 const isPlaying = data.is_playing;
                 this.repeatState = data.repeat_state;
 
@@ -176,7 +196,7 @@ export class SpoticodeProvider implements vscode.WebviewViewProvider {
                     type: 'update',
                     title: 'Sem música tocando',
                     artist: 'Spoticode',
-                    image: 'https://i.imgur.com/weLYqlw.png',
+                    image: 'https://i.imgur.com/aA1MjNw.png',
                     isPlaying: false,
                     repeatState: 'off'
                 });
@@ -187,7 +207,7 @@ export class SpoticodeProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    private _getHtmlForWebview(title = 'Faça login e/ou play no app', artist = 'Spoticode - github.com/vitorwille', image = 'https://i.imgur.com/weLYqlw.png', isPlaying = true) {
+    private _getHtmlForWebview(title = 'Faça login e/ou play no app', artist = 'Spoticode - github.com/vitorwille', image = 'https://i.imgur.com/aA1MjNw.png', isPlaying = false) {
         const iconVolume = `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
             <path d="M9.741.85a.75.75 0 0 1 .375.65v13a.75.75 0 0 1-1.125.65l-6.925-4a3.642 3.642 0 0 1-1.33-4.967 3.639 3.639 0 0 1 1.33-1.332l6.925-4a.75.75 0 0 1 .75 0zm-6.924 5.3a2.139 2.139 0 0 0 0 3.7l5.8 3.35V2.8l-5.8 3.35zm8.683 4.29V5.56a2.75 2.75 0 0 1 0 4.88z"/>
             <path d="M11.5 13.62a.75.75 0 1 1-1.06-1.06 4.39 4.39 0 0 0 0-6.12.75.75 0 1 1 1.06-1.06 5.89 5.89 0 0 1 0 8.24z"/>
@@ -379,12 +399,12 @@ export class SpoticodeProvider implements vscode.WebviewViewProvider {
                         <button class="btn-icon btn-open-small" id="btnOpenSmall" title="Escolher Música">${iconSearch}</button>
                     </div>
                     <div class="controls" style="min-height: 32px;">
-                        <button class="btn-icon" id="btnVol">${iconVolume}</button>
+                        <button title="Aumentar/diminuir volume" class="btn-icon" id="btnVol">${iconVolume}</button>
                         
-                        <button class="btn-icon pb-btn" id="btnPrev">${iconPrev}</button>
-                        <button class="btn-playpause pb-btn" id="btnPlayPause">${isPlaying ? iconPause : iconPlay}</button>
-                        <button class="btn-icon pb-btn" id="btnNext">${iconNext}</button>
-                        <button class="btn-icon pb-btn" id="btnRep">${iconRepeat}</button>
+                        <button title="Música anterior" class="btn-icon pb-btn" id="btnPrev">${iconPrev}</button>
+                        <button title="Play/Pause" class="btn-playpause pb-btn" id="btnPlayPause">${isPlaying ? iconPause : iconPlay}</button>
+                        <button title="Próxima música" class="btn-icon pb-btn" id="btnNext">${iconNext}</button>
+                        <button title="Modo repeat" class="btn-icon pb-btn" id="btnRep">${iconRepeat}</button>
 
                         <div id="volContainer" style="display: none; flex: 1; align-items: center; gap: 8px; margin-left: 8px; height: 32px;">
                             <input type="range" id="volSlider" min="0" max="100" value="0" style="flex: 1; accent-color: #1ed760; cursor: pointer; margin: 0;">
@@ -425,21 +445,27 @@ export class SpoticodeProvider implements vscode.WebviewViewProvider {
                     window.addEventListener('message', event => {
                         const message = event.data;
                         if (message.type === 'update') {
-                            console.log('Update received:', message.repeatState);
-                            document.getElementById('trackTitle').textContent = message.title;
-                            document.getElementById('trackArtist').textContent = message.artist;
-                            document.getElementById('albumArt').src = message.image;
-                            document.getElementById('btnPlayPause').innerHTML = message.isPlaying ? '${iconPause}' : '${iconPlay}';
+                            const titleEl = document.getElementById('trackTitle');
+                            const artistEl = document.getElementById('trackArtist');
+                            const imgEl = document.getElementById('albumArt');
+                            const playEl = document.getElementById('btnPlayPause');
+                            const repEl = document.getElementById('btnRep');
+
+                            if (titleEl.textContent !== message.title) titleEl.textContent = message.title;
+                            if (artistEl.textContent !== message.artist) artistEl.textContent = message.artist;
+                            if (imgEl.src !== message.image) imgEl.src = message.image;
                             
-                            const btnRep = document.getElementById('btnRep');
-                            if (btnRep) {
+                            const playIcon = message.isPlaying ? '${iconPause}' : '${iconPlay}';
+                            if (playEl.innerHTML !== playIcon) playEl.innerHTML = playIcon;
+                            
+                            if (repEl) {
+                                let repIcon = '${iconRepeat}';
                                 if (message.repeatState === 'track') {
-                                    btnRep.innerHTML = '${iconRepeatOne}';
+                                    repIcon = '${iconRepeatOne}';
                                 } else if (message.repeatState === 'context') {
-                                    btnRep.innerHTML = '${iconRepeatAll}';
-                                } else {
-                                    btnRep.innerHTML = '${iconRepeat}';
+                                    repIcon = '${iconRepeatAll}';
                                 }
+                                if (repEl.innerHTML !== repIcon) repEl.innerHTML = repIcon;
                             }
                         }
                     });
